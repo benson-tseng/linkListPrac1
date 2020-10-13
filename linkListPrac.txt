@@ -1,0 +1,219 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+void createEmptyQueue(void);
+void insertNode(char key);
+int empty(void);
+void printRear(void);
+void deleteNode(char key);
+int judgeAns(void);
+int countAns(int startNode);
+struct node *thisNode, *prevNode, *tempNode;
+
+/* run this program using the console pauser or add your own getch, system("pause") or input loop */
+struct node{
+	char data;
+	struct node *rLink;
+	struct node *lLink;
+};
+
+struct node *front, *rear;
+int countSide = 1;
+int inputLength;
+
+int empty(void){
+	if(front->rLink == NULL)
+		return 1;
+	else
+		return 0;
+}
+
+void createEmptyQueue(void){
+	front = (struct node *) malloc(sizeof(struct node));
+	rear = (struct node *) malloc(sizeof(struct node));
+	front->rLink = NULL;
+	rear->rLink = NULL;
+}
+
+void insertNode(char key){
+	struct node *newNode, *prevNode, *thisNode;
+	newNode = (struct node *) malloc(sizeof(struct node));
+	newNode->data = key;
+	newNode->lLink = NULL;
+	newNode->rLink = NULL;
+	if(empty()){
+		front->rLink = newNode;
+		rear->rLink = newNode;
+		newNode->lLink = front;
+		newNode->rLink = front;
+	}else{
+		thisNode = front->rLink;
+		while(thisNode->rLink != front){
+			prevNode = thisNode;
+			thisNode = thisNode->rLink;
+		}
+		thisNode->rLink = newNode;
+		newNode->lLink = thisNode;
+		newNode->rLink = front;
+		rear->rLink = newNode;
+	}
+}
+
+void printRear(void){
+	struct node *thisNode;
+	if(!empty()){
+		thisNode = front->rLink;
+		printf("\n串列內容為 : ");
+		while(thisNode->rLink != front->rLink){
+			printf("%c ->",thisNode->data);
+			thisNode = thisNode->rLink;
+		}
+		printf("%c \n",thisNode->data);
+	}else{
+		printf("emptyAry");
+	}
+}
+
+int judgeAns(void){
+	// judge whether linkList have O or not
+	thisNode = front->rLink;
+	while(thisNode != front->rLink->lLink){
+		if(thisNode->data == 'O'){
+			return 1;
+		}
+		thisNode = thisNode->rLink;
+	}
+	if(thisNode->data == 'O'){
+		return 1;
+	}
+	return 0;
+}
+
+int countAns(int countStep){
+	int ansOrNot = judgeAns();
+	if(ansOrNot == 0){
+		return countStep;
+	}else{
+		if(countSide == 0){
+			thisNode = front->rLink;
+			int tmpStep = countStep;
+			//move thisNode from front to destination
+			while(tmpStep != 0){
+				thisNode = thisNode->rLink;
+				tmpStep -= 1;
+			}
+			//judge thisNode is X or O
+			if(thisNode->data == 'X'){
+				return 0;
+			}else{
+				//if thisNode equal O than remove it
+				tempNode = thisNode;
+				prevNode = thisNode->lLink;
+				prevNode->rLink = thisNode->rLink;
+				thisNode->rLink->lLink = prevNode;
+				//redirect the front rLink(be careful when the loop go clockwise change front to thisNode->lLink)
+				front->rLink = thisNode->lLink;
+				printf("\nresultlist:");
+				printRear();
+				//change CountSide
+				countSide = 1;
+				int tmpAns = countAns(countStep);
+				if(tmpAns == 0){
+					return 0;
+				}else{
+					return countStep;
+				}
+			}
+		}else{
+			thisNode = front->rLink;
+			int tmpStep = countStep;
+			while(tmpStep != 0){
+				thisNode = thisNode->lLink;
+				tmpStep -= 1;
+			}
+			if(thisNode->data == 'X'){
+				return 0;
+			}else{
+				tempNode = thisNode;
+				prevNode = thisNode->lLink;
+				prevNode->rLink = thisNode->rLink;
+				thisNode->rLink->lLink = prevNode;
+				//redirect the front rLink(be careful when the loop go counterclockwise change front to thisNode->rLink)
+				front->rLink = thisNode->rLink;
+				printf("\nresultlist:");
+				printRear();
+				countSide = 0;
+				int tmpAns = countAns(countStep);
+				if(tmpAns == 0){
+					return 0;
+				}else{
+					return countStep;
+				}
+			}
+		}
+	}
+}
+int main(int argc, char *argv[]) {
+	printf("請輸入任意OX字串(上限為100):\n");
+	char inputString[101];
+	scanf(" %s", &inputString);
+	createEmptyQueue();
+	int i;
+	//insert Value into linkList
+	for(i = 0; i < strlen(inputString);i++){
+		insertNode(inputString[i]);
+	}
+	//redirect front&rear pointer
+	rear->rLink->rLink = front->rLink;
+	front->rLink->lLink = rear->rLink;
+	printRear();
+	inputLength = strlen(inputString);
+	struct node *thisNode, *tempNode, *prevNode;
+	thisNode = front->rLink->rLink;
+	int countStep = 1;
+	//infinite loop until find the Ans
+	while(countSide < 2){
+		//set init Value of countSide(counterclockwise)
+		countSide = 1;
+		if(thisNode->data=='O'){
+			printf("\nstep:%d\n",countStep);
+			//remove the first node we meet
+			tempNode = thisNode;
+			prevNode = thisNode->lLink;
+			prevNode->rLink = thisNode->rLink;
+			thisNode->rLink->lLink = prevNode;
+			front->rLink = thisNode->lLink;
+			printf("\nbefore Enter");
+			printRear();
+			int tmpAns = countAns(countStep-1);
+			if(tmpAns != 0){
+				printf("\n幸運數字為:%d",tmpAns+1);
+				break;
+			}else{
+				//if there's no anwser, rebuild the linkList
+				createEmptyQueue();
+				for(i = 0; i < strlen(inputString);i++){
+					insertNode(inputString[i]);
+				}
+				rear->rLink->rLink = front->rLink;
+				front->rLink->lLink = rear->rLink;
+				thisNode = front->rLink;
+				int tmpStep = countStep;
+				//move thisNode to where the node start counting before
+				while(tmpStep != 0){
+					thisNode = thisNode->rLink;
+					tmpStep -= 1;
+				}
+			}
+		}
+		// redirect the front pointer & move thisNode to next step
+		thisNode = thisNode->rLink;
+		front->rLink = thisNode;
+		printf("\nchangeHeadList");
+		printRear();
+		countStep += 1;
+	}	
+	
+	return 0;
+}
